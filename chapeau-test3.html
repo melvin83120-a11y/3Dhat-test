@@ -32,59 +32,65 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <script>
-let scene, camera, renderer, hat;
-
-scene = new THREE.Scene();
-camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-renderer = new THREE.WebGLRenderer({ antialias:true });
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const light = new THREE.DirectionalLight(0xffffff, 1);
+let light = new THREE.DirectionalLight(0xffffff, 1);
 light.position.set(1, 1, 1).normalize();
 scene.add(light);
+scene.add(new THREE.AmbientLight(0x404040));
 
 camera.position.z = 3;
 
-const loader = new THREE.GLTFLoader();
+let hat;
+const loadingDiv = document.getElementById("loading");
+const controlsDiv = document.getElementById("controls");
 
-// 🔗 Lien complet vers ton modèle
+// 🔗 Lien GitHub Pages (à remplacer si nécessaire)
+const hatURL = "https://melvin83120-a11y.github.io/3Dhat-test/Chapeau.glb";
+
+const loader = new THREE.GLTFLoader();
 loader.load(
-  "https://raw.githubusercontent.com/melvin83120-a11y/3Dhat-test/main/Chapeau.glb",
+  hatURL,
   (gltf) => {
     hat = gltf.scene;
     scene.add(hat);
-    document.getElementById("loading").style.display = "none";
+
+    // Centrer le modèle
+    const box = new THREE.Box3().setFromObject(hat);
+    const center = box.getCenter(new THREE.Vector3());
+    hat.position.sub(center);
+
+    loadingDiv.style.display = "none";
+    controlsDiv.style.display = "block";
   },
   (xhr) => {
     if (xhr.total) {
-      document.getElementById("loading").textContent =
-        "Chargement... " + (xhr.loaded / xhr.total * 100).toFixed(0) + "%";
+      const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+      loadingDiv.textContent = "Chargement... " + percent + "%";
     }
   },
   (error) => {
-    document.getElementById("loading").textContent = "Erreur : impossible de charger le modèle.";
-    console.error("Erreur GLB :", error);
+    loadingDiv.textContent = "❌ Erreur de chargement du modèle GLB";
+    console.error(error);
   }
 );
 
-// 🎚 Curseurs
-document.getElementById("scaleRange").addEventListener("input", (e) => {
+// Curseurs
+document.getElementById("scaleRange").addEventListener("input", e => {
   if (hat) {
-    let s = parseFloat(e.target.value);
-    hat.scale.set(s, s, s);
+    const s = parseFloat(e.target.value);
+    hat.scale.set(s,s,s);
   }
 });
-document.getElementById("posX").addEventListener("input", (e) => {
-  if (hat) hat.position.x = parseFloat(e.target.value);
-});
-document.getElementById("posY").addEventListener("input", (e) => {
-  if (hat) hat.position.y = parseFloat(e.target.value);
-});
-document.getElementById("posZ").addEventListener("input", (e) => {
-  if (hat) hat.position.z = parseFloat(e.target.value);
-});
+document.getElementById("posX").addEventListener("input", e => { if(hat) hat.position.x = parseFloat(e.target.value); });
+document.getElementById("posY").addEventListener("input", e => { if(hat) hat.position.y = parseFloat(e.target.value); });
+document.getElementById("posZ").addEventListener("input", e => { if(hat) hat.position.z = parseFloat(e.target.value); });
 
+// Animation
 function animate() {
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
