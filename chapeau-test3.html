@@ -2,22 +2,16 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Test affichage Chapeau.glb</title>
+  <title>Test Chapeau.glb</title>
   <style>
     body { margin:0; overflow:hidden; background:#111; }
-    canvas { display:block; }
     #controls {
       position:absolute; top:10px; left:10px;
       background:rgba(0,0,0,0.5); color:white;
-      padding:10px; border-radius:10px; z-index:2;
+      padding:10px; border-radius:10px;
+      z-index:2;
     }
     input[type=range]{ width:200px; }
-    #error {
-      position:absolute; top:10px; right:10px;
-      background:rgba(255,0,0,0.8); color:white;
-      padding:10px; border-radius:10px; z-index:3;
-      display:none;
-    }
   </style>
 </head>
 <body>
@@ -25,45 +19,42 @@
     <label for="scaleRange">Taille :</label><br>
     <input type="range" id="scaleRange" min="0.1" max="5" step="0.1" value="1">
   </div>
-  <div id="error">❌ Erreur : Chapeau.glb introuvable (cube affiché à la place)</div>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <script>
-    // --- Initialisation de la scène ---
+    // --- Scène, caméra, rendu ---
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // Lumière
+    // Lumières
     const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(1, 1, 2).normalize();
+    light.position.set(2, 2, 5);
     scene.add(light);
+    scene.add(new THREE.AmbientLight(0x404040, 2)); // lumière douce
 
-    // Contrôles
+    // Variables
+    let objet = null;
     const scaleRange = document.getElementById("scaleRange");
 
-    // Modèle
+    // Charger le chapeau
     const loader = new THREE.GLTFLoader();
-    let objet = null;
-
     loader.load(
       "https://melvin83120-a11y.github.io/3Dhat-test/Chapeau.glb",
       function(gltf) {
         objet = gltf.scene;
-        objet.scale.set(1, 1, 1);
+        objet.scale.set(1,1,1);
         scene.add(objet);
-        console.log("✅ Chapeau.glb chargé avec succès");
+        console.log("✅ Chapeau chargé !");
       },
       undefined,
       function(error) {
         console.error("❌ Erreur de chargement :", error);
-        document.getElementById("error").style.display = "block";
-
-        // Affiche un cube si le chapeau est introuvable
+        // Cube de secours
         const geometry = new THREE.BoxGeometry(1,1,1);
         const material = new THREE.MeshNormalMaterial();
         objet = new THREE.Mesh(geometry, material);
@@ -71,8 +62,8 @@
       }
     );
 
-    // Caméra
-    camera.position.z = 3;
+    // Position caméra
+    camera.position.z = 5;
 
     // Animation
     function animate(){
@@ -80,6 +71,7 @@
       if (objet) {
         const s = parseFloat(scaleRange.value);
         objet.scale.set(s, s, s);
+        objet.rotation.y += 0.01; // rotation automatique pour bien voir
       }
       renderer.render(scene, camera);
     }
