@@ -2,58 +2,48 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Test Chapeau.glb</title>
+  <title>Test affichage3 Chapeau.glb</title>
   <style>
-    body { margin:0; overflow:hidden; background:#111; }
-    #controls {
-      position:absolute; top:10px; left:10px;
-      background:rgba(0,0,0,0.5); color:white;
-      padding:10px; border-radius:10px;
-      z-index:2;
-    }
-    #loading {
-      position:absolute; top:50%; left:50%;
-      transform:translate(-50%, -50%);
-      color:white; font-size:24px;
-      background:rgba(0,0,0,0.7);
-      padding:20px; border-radius:10px;
-      z-index:3;
-    }
+    body { margin:0; overflow:hidden; background:#000; color:white; font-family:sans-serif; }
+    canvas { display:block; }
+    #loading { position:absolute; top:20px; left:50%; transform:translateX(-50%);
+               background:rgba(0,0,0,0.7); padding:10px 20px; border-radius:10px; }
+    #controls { position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+                background:rgba(0,0,0,0.7); padding:10px 20px; border-radius:10px; display:none; }
     input[type=range]{ width:200px; }
   </style>
 </head>
 <body>
   <div id="loading">⏳ Chargement du chapeau...</div>
-
-  <div id="controls" style="display:none;">
-    <label for="scaleRange">Taille :</label><br>
-    <input type="range" id="scaleRange" min="0.1" max="5" step="0.1" value="1">
+  <div id="controls">
+    <label for="scaleRange">Taille :</label>
+    <input type="range" id="scaleRange" min="0.1" max="3" step="0.1" value="1">
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <script>
-    // --- Scène, caméra, rendu ---
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
-    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    let scene, camera, renderer, objet;
+    const loadingDiv = document.getElementById("loading");
+    const controlsDiv = document.getElementById("controls");
+    const scaleRange = document.getElementById("scaleRange");
+
+    // Scène de base
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.z = 3;
+
+    renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // Lumières
+    // Lumière
     const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(2, 2, 5);
+    light.position.set(0, 2, 5);
     scene.add(light);
-    scene.add(new THREE.AmbientLight(0x404040, 2));
 
-    // Variables
-    let objet = null;
-    const scaleRange = document.getElementById("scaleRange");
-    const loadingDiv = document.getElementById("loading");
-    const controlsDiv = document.getElementById("controls");
-
-    // Charger le chapeau
+    // Loader
     const loader = new THREE.GLTFLoader();
     loader.load(
       "https://melvin83120-a11y.github.io/3Dhat-test/Chapeau.glb",
@@ -62,47 +52,45 @@
         objet.scale.set(1,1,1);
         scene.add(objet);
 
-        // Centrer le modèle
+        // Centrer l’objet
         const box = new THREE.Box3().setFromObject(objet);
         const center = box.getCenter(new THREE.Vector3());
-        objet.position.sub(center); // repositionne au centre
+        objet.position.sub(center);
 
         console.log("✅ Chapeau chargé !");
         loadingDiv.style.display = "none";
         controlsDiv.style.display = "block";
       },
-      undefined,
+      function(xhr) {
+        if (xhr.total) {
+          const pourcent = (xhr.loaded / xhr.total) * 100;
+          loadingDiv.textContent = "⏳ Chargement... " + pourcent.toFixed(1) + "%";
+        }
+      },
       function(error) {
         console.error("❌ Erreur de chargement :", error);
         loadingDiv.textContent = "⚠️ Erreur : impossible de charger le chapeau";
-
-        // Cube de secours
-        const geometry = new THREE.BoxGeometry(1,1,1);
-        const material = new THREE.MeshNormalMaterial();
-        objet = new THREE.Mesh(geometry, material);
-        scene.add(objet);
-        controlsDiv.style.display = "block";
       }
     );
 
-    // Position caméra reculée
-    camera.position.z = 20;
+    // Curseur taille
+    scaleRange.addEventListener("input", ()=>{
+      if (objet) {
+        const s = parseFloat(scaleRange.value);
+        objet.scale.set(s, s, s);
+      }
+    });
 
     // Animation
     function animate(){
       requestAnimationFrame(animate);
-      if (objet) {
-        const s = parseFloat(scaleRange.value);
-        objet.scale.set(s, s, s);
-        objet.rotation.y += 0.01;
-      }
       renderer.render(scene, camera);
     }
     animate();
 
     // Resize
     window.addEventListener("resize", ()=>{
-      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
