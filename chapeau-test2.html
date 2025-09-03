@@ -1,98 +1,89 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Test Chapeau.glb</title>
+  <meta charset="UTF-8">
+  <title>Test affichage Chapeau.glb</title>
   <style>
-    body { margin:0; overflow:hidden; background:#111; font-family:system-ui, sans-serif; }
+    body { margin:0; overflow:hidden; background:#111; }
+    canvas { display:block; }
     #controls {
-      position: absolute; top: 10px; left: 10px;
-      background: rgba(0,0,0,0.6); color: #fff; padding: 10px 12px;
-      border-radius: 10px; z-index: 10; font-size: 14px;
+      position:absolute; top:10px; left:10px;
+      background:rgba(0,0,0,0.5); color:white;
+      padding:10px; border-radius:10px; z-index:2;
     }
-    input[type=range] { width: 220px; }
-    #hint { position:absolute; bottom:10px; left:10px; color:#aaa; font-size:12px; }
+    input[type=range]{ width:200px; }
+    #error {
+      position:absolute; top:10px; right:10px;
+      background:rgba(255,0,0,0.8); color:white;
+      padding:10px; border-radius:10px; z-index:3;
+      display:none;
+    }
   </style>
 </head>
 <body>
+  <div id="controls">
+    <label for="scaleRange">Taille du chapeau :</label><br>
+    <input type="range" id="scaleRange" min="0.1" max="5" step="0.1" value="1">
+  </div>
+  <div id="error">❌ Erreur : Chapeau.glb introuvable</div>
 
-<div id="controls">
-  <label for="rotateY">Rotation Y (°)</label><br/>
-  <input id="rotateY" type="range" min="-180" max="180" step="1" value="0" />
-</div>
-<div id="hint">Place <b>Chapeau.glb</b> à côté de ce fichier (même dossier).</div>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/loaders/GLTFLoader.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/loaders/GLTFLoader.js"></script>
-
-<script>
-  // Scène de base
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
-  const renderer = new THREE.WebGLRenderer({ antialias:true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  document.body.appendChild(renderer.domElement);
-
-  // Lumières simples
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-  dir.position.set(2, 3, 4);
-  scene.add(dir);
-
-  let chapeau = null;
-
-  // Charge le chapeau
-  const loader = new THREE.GLTFLoader();
-  loader.load(
-    'Chapeau.glb',
-    (gltf) => {
-      chapeau = gltf.scene;
-      scene.add(chapeau);
-
-      // Centre l'objet à l'origine pour des rotations propres
-      const box = new THREE.Box3().setFromObject(chapeau);
-      const center = box.getCenter(new THREE.Vector3());
-      chapeau.position.sub(center);
-
-      // Ajuste la caméra pour cadrer l'objet
-      const sizeVec = box.getSize(new THREE.Vector3());
-      const maxSize = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
-      const fov = camera.fov * (Math.PI / 180);
-      const dist = (maxSize / 2) / Math.tan(fov / 2);
-
-      camera.position.set(0, 0, dist * 1.4);
-      camera.near = Math.max(0.01, dist / 100);
-      camera.far = dist * 100;
-      camera.updateProjectionMatrix();
-    },
-    undefined,
-    (err) => {
-      console.error('Erreur de chargement de Chapeau.glb :', err);
-    }
-  );
-
-  // Curseur de rotation Y
-  const rotateY = document.getElementById('rotateY');
-  rotateY.addEventListener('input', () => {
-    if (!chapeau) return;
-    chapeau.rotation.y = THREE.MathUtils.degToRad(parseFloat(rotateY.value));
-  });
-
-  // Boucle de rendu
-  function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-  }
-  animate();
-
-  // Responsive
-  window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+  <script>
+    // Scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-  });
-</script>
+    document.body.appendChild(renderer.domElement);
 
+    // Lumière
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(1, 1, 2).normalize();
+    scene.add(light);
+
+    // Contrôles curseur
+    const scaleRange = document.getElementById("scaleRange");
+
+    // Charge le chapeau
+    const loader = new THREE.GLTFLoader();
+    let chapeau = null;
+
+    loader.load(
+      "Chapeau.glb",
+      function(gltf) {
+        chapeau = gltf.scene;
+        chapeau.scale.set(1,1,1);
+        scene.add(chapeau);
+      },
+      undefined,
+      function(error) {
+        console.error("Erreur de chargement :", error);
+        document.getElementById("error").style.display = "block"; // affiche le message
+      }
+    );
+
+    // Caméra
+    camera.position.z = 3;
+
+    // Animation
+    function animate(){
+      requestAnimationFrame(animate);
+      if (chapeau) {
+        const s = parseFloat(scaleRange.value);
+        chapeau.scale.set(s, s, s);
+      }
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Resize
+    window.addEventListener("resize", ()=>{
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
 </body>
 </html>
