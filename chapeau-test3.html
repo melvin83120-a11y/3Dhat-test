@@ -4,34 +4,33 @@
 <meta charset="UTF-8">
 <title>Test Chapeau GLB</title>
 <style>
-  body { margin:0; overflow:hidden; background:#111; color:white; font-family:sans-serif; }
-  #controls { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); padding:10px; border-radius:10px; }
-  input[type=range] { width:150px; }
-  #loading { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:20px; }
+body { margin:0; overflow:hidden; background:#111; color:white; font-family:sans-serif; }
+#controls { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); padding:10px; border-radius:10px; }
+input[type=range]{ width:150px; }
+#loading { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:20px; color:white; }
 </style>
 </head>
 <body>
-
 <div id="controls">
-  <label>Échelle:</label><br>
+  <label>Échelle :</label><br>
   <input type="range" id="scaleRange" min="0.1" max="5" step="0.1" value="1"><br><br>
 
-  <label>Position X:</label><br>
+  <label>Position X :</label><br>
   <input type="range" id="posX" min="-5" max="5" step="0.1" value="0"><br><br>
 
-  <label>Position Y:</label><br>
+  <label>Position Y :</label><br>
   <input type="range" id="posY" min="-5" max="5" step="0.1" value="0"><br><br>
 
-  <label>Position Z:</label><br>
+  <label>Position Z :</label><br>
   <input type="range" id="posZ" min="-5" max="5" step="0.1" value="0"><br>
 </div>
 
 <div id="loading">Chargement du modèle...</div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/loaders/GLTFLoader.js"></script>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.module.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/loaders/GLTFLoader.js';
 
-<script>
 let scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 let renderer = new THREE.WebGLRenderer({ antialias:true });
@@ -39,7 +38,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 let light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(1, 1, 1).normalize();
+light.position.set(1,1,1).normalize();
 scene.add(light);
 scene.add(new THREE.AmbientLight(0x404040));
 
@@ -49,13 +48,13 @@ let hat;
 const loadingDiv = document.getElementById("loading");
 const controlsDiv = document.getElementById("controls");
 
-// 🔗 Lien GitHub Pages (à remplacer si nécessaire)
+// Lien GitHub Pages du fichier GLB
 const hatURL = "https://melvin83120-a11y.github.io/3Dhat-test/Chapeau.glb";
 
-const loader = new THREE.GLTFLoader();
+const loader = new GLTFLoader();
 loader.load(
   hatURL,
-  (gltf) => {
+  (gltf)=>{
     hat = gltf.scene;
     scene.add(hat);
 
@@ -67,37 +66,31 @@ loader.load(
     loadingDiv.style.display = "none";
     controlsDiv.style.display = "block";
   },
-  (xhr) => {
-    if (xhr.total) {
-      const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
-      loadingDiv.textContent = "Chargement... " + percent + "%";
+  (xhr)=>{
+    if(xhr.total){
+      loadingDiv.textContent = "Chargement... " + (xhr.loaded/xhr.total*100).toFixed(0) + "%";
     }
   },
-  (error) => {
+  (error)=>{
     loadingDiv.textContent = "❌ Erreur de chargement du modèle GLB";
     console.error(error);
   }
 );
 
 // Curseurs
-document.getElementById("scaleRange").addEventListener("input", e => {
-  if (hat) {
-    const s = parseFloat(e.target.value);
-    hat.scale.set(s,s,s);
-  }
-});
-document.getElementById("posX").addEventListener("input", e => { if(hat) hat.position.x = parseFloat(e.target.value); });
-document.getElementById("posY").addEventListener("input", e => { if(hat) hat.position.y = parseFloat(e.target.value); });
-document.getElementById("posZ").addEventListener("input", e => { if(hat) hat.position.z = parseFloat(e.target.value); });
+document.getElementById("scaleRange").addEventListener("input", e=>{ if(hat) { let s=parseFloat(e.target.value); hat.scale.set(s,s,s); } });
+document.getElementById("posX").addEventListener("input", e=>{ if(hat) hat.position.x = parseFloat(e.target.value); });
+document.getElementById("posY").addEventListener("input", e=>{ if(hat) hat.position.y = parseFloat(e.target.value); });
+document.getElementById("posZ").addEventListener("input", e=>{ if(hat) hat.position.z = parseFloat(e.target.value); });
 
 // Animation
-function animate() {
+function animate(){
   requestAnimationFrame(animate);
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 animate();
 
-window.addEventListener("resize", () => {
+window.addEventListener("resize", ()=>{
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
