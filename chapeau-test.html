@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Chapeau 3D</title>
+  <style>
+    body { margin:0; overflow:hidden; background:#111; }
+    #controls {
+      position:absolute; 
+      top:10px; left:10px; 
+      background:rgba(0,0,0,0.6); 
+      color:white; 
+      padding:10px; 
+      border-radius:10px;
+    }
+    input[type=range] { width:200px; }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <label for="rotateRange">Rotation Y :</label><br>
+  <input type="range" id="rotateRange" min="-180" max="180" step="1" value="0">
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<script>
+  // Scene + camera + renderer
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Lumière
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(1,1,1).normalize();
+  scene.add(light);
+
+  // Charger le chapeau
+  let chapeau;
+  const loader = new THREE.GLTFLoader();
+  loader.load("Chapeau.glb", function(gltf){
+    chapeau = gltf.scene;
+    chapeau.scale.set(1,1,1);   // taille
+    scene.add(chapeau);
+  });
+
+  camera.position.z = 3;
+
+  // Curseur rotation
+  const rotateRange = document.getElementById("rotateRange");
+  rotateRange.addEventListener("input", ()=>{
+    if(chapeau){
+      const angle = THREE.MathUtils.degToRad(parseFloat(rotateRange.value));
+      chapeau.rotation.y = angle;
+    }
+  });
+
+  // Animation loop
+  function animate(){
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // Resize automatique
+  window.addEventListener("resize", ()=>{
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+
+</body>
+</html>
