@@ -22,16 +22,16 @@
 </head>
 <body>
   <div id="controls">
-    <label for="scaleRange">Taille du chapeau :</label><br>
+    <label for="scaleRange">Taille :</label><br>
     <input type="range" id="scaleRange" min="0.1" max="5" step="0.1" value="1">
   </div>
-  <div id="error">❌ Erreur : Chapeau.glb introuvable</div>
+  <div id="error">❌ Erreur : Chapeau.glb introuvable (cube affiché à la place)</div>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <script>
-    // Scene
+    // --- Initialisation de la scène ---
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias:true });
@@ -43,24 +43,31 @@
     light.position.set(1, 1, 2).normalize();
     scene.add(light);
 
-    // Contrôles curseur
+    // Contrôles
     const scaleRange = document.getElementById("scaleRange");
 
-    // Charge le chapeau
+    // Modèle
     const loader = new THREE.GLTFLoader();
-    let chapeau = null;
+    let objet = null;
 
     loader.load(
-      "Chapeau.glb",
+      "https://melvin83120-a11y.github.io/3Dhat-test/Chapeau.glb",
       function(gltf) {
-        chapeau = gltf.scene;
-        chapeau.scale.set(1,1,1);
-        scene.add(chapeau);
+        objet = gltf.scene;
+        objet.scale.set(1, 1, 1);
+        scene.add(objet);
+        console.log("✅ Chapeau.glb chargé avec succès");
       },
       undefined,
       function(error) {
-        console.error("Erreur de chargement :", error);
-        document.getElementById("error").style.display = "block"; // affiche le message
+        console.error("❌ Erreur de chargement :", error);
+        document.getElementById("error").style.display = "block";
+
+        // Affiche un cube si le chapeau est introuvable
+        const geometry = new THREE.BoxGeometry(1,1,1);
+        const material = new THREE.MeshNormalMaterial();
+        objet = new THREE.Mesh(geometry, material);
+        scene.add(objet);
       }
     );
 
@@ -70,9 +77,9 @@
     // Animation
     function animate(){
       requestAnimationFrame(animate);
-      if (chapeau) {
+      if (objet) {
         const s = parseFloat(scaleRange.value);
-        chapeau.scale.set(s, s, s);
+        objet.scale.set(s, s, s);
       }
       renderer.render(scene, camera);
     }
